@@ -237,3 +237,54 @@ export async function getGroups(): Promise<ApiResponse<string[]>> {
   const res = await api.get('/api/group')
   return res.data
 }
+
+export async function redeemSubscriptionCode(
+  code: string
+): Promise<ApiResponse<{ subscription: import('./types').UserSubscription }>> {
+  const res = await api.post('/api/subscription/redeem-code', { code })
+  return res.data
+}
+
+export interface SubscriptionRedeemCodeRecord {
+  id: number
+  plan_id: number
+  batch_id: string
+  created_by: number
+  status: 'issued' | 'redeemed' | 'revoked'
+  created_at: number
+  expires_at: number
+  redeemed_at: number
+  redeemed_by: number
+  subscription_id: number
+}
+
+export interface IssuedSubscriptionCode {
+  code: string
+}
+
+export async function generateSubscriptionRedeemCodes(request: {
+  plan_id: number
+  count: number
+  expires_at?: number
+}): Promise<
+  ApiResponse<{ batch_id: string; codes: IssuedSubscriptionCode[] }>
+> {
+  const res = await api.post('/api/subscription/admin/redeem-codes', request)
+  return res.data
+}
+
+export async function getSubscriptionRedeemCodes(): Promise<
+  ApiResponse<{ items: SubscriptionRedeemCodeRecord[]; total: number }>
+> {
+  const res = await api.get(
+    '/api/subscription/admin/redeem-codes?start=0&limit=50'
+  )
+  return res.data
+}
+
+export async function revokeSubscriptionRedeemCode(
+  id: number
+): Promise<ApiResponse> {
+  const res = await api.delete(`/api/subscription/admin/redeem-codes/${id}`)
+  return res.data
+}

@@ -3,6 +3,7 @@ package model
 import (
 	"errors"
 	"fmt"
+	"net/url"
 	"strconv"
 	"strings"
 	"sync"
@@ -165,9 +166,12 @@ type SubscriptionPlan struct {
 	// Allow falling back to wallet balance after subscription quota is exhausted (empty = true)
 	AllowWalletOverflow *bool `json:"allow_wallet_overflow"`
 
-	StripePriceId         string `json:"stripe_price_id" gorm:"type:varchar(128);default:''"`
-	CreemProductId        string `json:"creem_product_id" gorm:"type:varchar(128);default:''"`
-	WaffoPancakeProductId string `json:"waffo_pancake_product_id" gorm:"type:varchar(128);default:''"`
+	StripePriceId            string  `json:"stripe_price_id" gorm:"type:varchar(128);default:''"`
+	CreemProductId           string  `json:"creem_product_id" gorm:"type:varchar(128);default:''"`
+	WaffoPancakeProductId    string  `json:"waffo_pancake_product_id" gorm:"type:varchar(128);default:''"`
+	ExternalPurchaseURL      string  `json:"external_purchase_url" gorm:"type:text"`
+	ExternalPurchasePrice    float64 `json:"external_purchase_price" gorm:"type:decimal(10,2)"`
+	ExternalPurchaseCurrency string  `json:"external_purchase_currency" gorm:"type:varchar(8)"`
 
 	// Max purchases per user (0 = unlimited)
 	MaxPurchasePerUser int `json:"max_purchase_per_user" gorm:"type:int;default:0"`
@@ -208,6 +212,32 @@ func (p *SubscriptionPlan) NormalizeDefaults() {
 	if p.AllowWalletOverflow == nil {
 		p.AllowWalletOverflow = common.GetPointer(true)
 	}
+}
+
+func (p *SubscriptionPlan) ValidateAndNormalizeExternalPurchase() error {
+	p.ExternalPurchaseURL = strings.TrimSpace(p.ExternalPurchaseURL)
+	if p.ExternalPurchaseURL != "" {
+		parsed, err := url.ParseRequestURI(p.ExternalPurchaseURL)
+		if err != nil || parsed.Scheme != "https" || parsed.Host == "" || parsed.User != nil {
+			return errors.New("\u5e97\u94fa\u8d2d\u4e70\u94fe\u63a5\u5fc5\u987b\u662f\u6709\u6548\u7684 HTTPS \u7f51\u5740")
+		}
+	}
+	if p.ExternalPurchasePrice < 0 {
+		return errors.New("\u5e97\u94fa\u4ef7\u683c\u4e0d\u80fd\u4e3a\u8d1f\u6570")
+	}
+	p.ExternalPurchaseCurrency = strings.ToUpper(strings.TrimSpace(p.ExternalPurchaseCurrency))
+	if p.ExternalPurchaseCurrency == "" {
+		p.ExternalPurchaseCurrency = "CNY"
+	}
+	if len(p.ExternalPurchaseCurrency) != 3 {
+		return errors.New("\u8d27\u5e01\u4ee3\u7801\u5fc5\u987b\u662f\u4e09\u4e2a\u82f1\u6587\u5b57\u6bcd")
+	}
+	for _, char := range p.ExternalPurchaseCurrency {
+		if char < 'A' || char > 'Z' {
+			return errors.New("\u8d27\u5e01\u4ee3\u7801\u5fc5\u987b\u662f\u4e09\u4e2a\u82f1\u6587\u5b57\u6bcd")
+		}
+	}
+	return nil
 }
 
 // Subscription order (payment -> webhook -> create UserSubscription)
@@ -482,6 +512,10 @@ func downgradeUserGroupForSubscriptionTx(tx *gorm.DB, sub *UserSubscription, now
 }
 
 func CreateUserSubscriptionFromPlanTx(tx *gorm.DB, userId int, plan *SubscriptionPlan, source string) (*UserSubscription, error) {
+	return createUserSubscriptionFromPlanTxAt(tx, userId, plan, source, 0)
+}
+
+func createUserSubscriptionFromPlanTxAt(tx *gorm.DB, userId int, plan *SubscriptionPlan, source string, nowUnix int64) (*UserSubscription, error) {
 	if tx == nil {
 		return nil, errors.New("tx is nil")
 	}
@@ -502,7 +536,9 @@ func CreateUserSubscriptionFromPlanTx(tx *gorm.DB, userId int, plan *Subscriptio
 			return nil, errors.New("已达到该套餐购买上限")
 		}
 	}
-	nowUnix := GetDBTimestamp()
+	if nowUnix <= 0 {
+		nowUnix = GetDBTimestamp()
+	}
 	now := time.Unix(nowUnix, 0)
 	endUnix, err := calcPlanEndTime(now, plan)
 	if err != nil {

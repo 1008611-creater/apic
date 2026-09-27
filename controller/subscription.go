@@ -149,6 +149,10 @@ func AdminCreateSubscriptionPlan(c *gin.Context) {
 		return
 	}
 	req.Plan.Id = 0
+	if err := req.Plan.ValidateAndNormalizeExternalPurchase(); err != nil {
+		common.ApiError(c, err)
+		return
+	}
 	if strings.TrimSpace(req.Plan.Title) == "" {
 		common.ApiErrorMsg(c, "套餐标题不能为空")
 		return
@@ -226,6 +230,10 @@ func AdminUpdateSubscriptionPlan(c *gin.Context) {
 	var req AdminUpsertSubscriptionPlanRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
 		common.ApiErrorMsg(c, "参数错误")
+		return
+	}
+	if err := req.Plan.ValidateAndNormalizeExternalPurchase(); err != nil {
+		common.ApiError(c, err)
 		return
 	}
 	if strings.TrimSpace(req.Plan.Title) == "" {

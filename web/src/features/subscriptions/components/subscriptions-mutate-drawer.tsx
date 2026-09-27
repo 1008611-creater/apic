@@ -743,6 +743,54 @@ export function SubscriptionsMutateDrawer({
 
               <FormField
                 control={form.control}
+                name='external_purchase_url'
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>{t('External shop product link')}</FormLabel>
+                    <FormControl>
+                      <Input {...field} type='url' placeholder='https://...' />
+                    </FormControl>
+                    <FormDescription>
+                      {t(
+                        'Optional link to the matching shop item. Verify the destination before saving.'
+                      )}
+                    </FormDescription>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              <div className='grid grid-cols-1 gap-3 sm:grid-cols-2'>
+                <FormField
+                  control={form.control}
+                  name='external_purchase_price'
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>{t('External shop price')}</FormLabel>
+                      <FormControl>
+                        <Input {...field} type='number' min={0} step='0.01' />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                <FormField
+                  control={form.control}
+                  name='external_purchase_currency'
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>{t('External shop currency')}</FormLabel>
+                      <FormControl>
+                        <Input {...field} placeholder='CNY' maxLength={8} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              </div>
+
+              <FormField
+                control={form.control}
                 name='stripe_price_id'
                 render={({ field }) => (
                   <FormItem>

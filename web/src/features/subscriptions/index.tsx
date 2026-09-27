@@ -22,6 +22,7 @@ import { useTranslation } from 'react-i18next'
 import { SectionPageLayout } from '@/components/layout'
 import { Alert, AlertDescription } from '@/components/ui/alert'
 
+import { SubscriptionRedeemCodeManager } from './components/subscription-redeem-code-manager'
 import { SubscriptionsDialogs } from './components/subscriptions-dialogs'
 import { SubscriptionsPrimaryButtons } from './components/subscriptions-primary-buttons'
 import {
@@ -54,7 +55,7 @@ function SubscriptionsContent() {
           </div>
         </SectionPageLayout.Actions>
         <SectionPageLayout.Content>
-          <div className='flex h-full min-h-0 flex-col gap-4'>
+          <div className='flex h-full min-h-0 flex-col gap-4 overflow-auto'>
             {!complianceConfirmed ? (
               <Alert variant='destructive' className='shrink-0'>
                 <AlertDescription>
@@ -67,6 +68,7 @@ function SubscriptionsContent() {
             <div className='min-h-0 flex-1'>
               <SubscriptionsTable />
             </div>
+            <SubscriptionRedeemCodeManager />
           </div>
         </SectionPageLayout.Content>
       </SectionPageLayout>

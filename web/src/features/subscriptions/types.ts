@@ -44,6 +44,9 @@ export const subscriptionPlanSchema = z.object({
   stripe_price_id: z.string().optional(),
   creem_product_id: z.string().optional(),
   waffo_pancake_product_id: z.string().optional(),
+  external_purchase_url: z.string().optional(),
+  external_purchase_price: z.number().optional(),
+  external_purchase_currency: z.string().optional(),
 })
 
 export type SubscriptionPlan = z.infer<typeof subscriptionPlanSchema>

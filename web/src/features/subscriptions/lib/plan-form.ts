@@ -50,6 +50,12 @@ export function getPlanFormSchema(t: TFunction) {
     stripe_price_id: z.string().optional(),
     creem_product_id: z.string().optional(),
     waffo_pancake_product_id: z.string().optional(),
+    external_purchase_url: z
+      .string()
+      .url(t('Please enter a valid HTTPS shop link'))
+      .or(z.literal('')),
+    external_purchase_price: z.coerce.number().min(0),
+    external_purchase_currency: z.string().min(3).max(8),
   })
 }
 
@@ -75,6 +81,9 @@ export const PLAN_FORM_DEFAULTS: PlanFormValues = {
   stripe_price_id: '',
   creem_product_id: '',
   waffo_pancake_product_id: '',
+  external_purchase_url: '',
+  external_purchase_price: 0,
+  external_purchase_currency: 'CNY',
 }
 
 export function planToFormValues(plan: SubscriptionPlan): PlanFormValues {
@@ -98,6 +107,9 @@ export function planToFormValues(plan: SubscriptionPlan): PlanFormValues {
     stripe_price_id: plan.stripe_price_id || '',
     creem_product_id: plan.creem_product_id || '',
     waffo_pancake_product_id: plan.waffo_pancake_product_id || '',
+    external_purchase_url: plan.external_purchase_url || '',
+    external_purchase_price: Number(plan.external_purchase_price || 0),
+    external_purchase_currency: plan.external_purchase_currency || 'CNY',
   }
 }
 
